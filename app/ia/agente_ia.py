@@ -1,41 +1,48 @@
+from app.database import SessionLocal
+from app.models import Tinta
+from app.ia.image_generator import gerar_imagem_dalle
+from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
 import os
-from dotenv import load_dotenv
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI 
-from langchain.chains import RetrievalQA
 
-load_dotenv() 
+llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"))
 
-openai_key = os.getenv("OPENAI_API_KEY")
+prompt_template = PromptTemplate.from_template("""
+Você é um assistente de decoração. Receba a descrição do cliente e recomende uma tinta da base disponível.
+Diga o nome da tinta, acabamento e cor. Não invente tintas que não existem na base.
 
-FAISS_INDEX_PATH = "ia/faiss_tintas"
+Base de tintas disponíveis:
+{tintas}
+
+Descrição do cliente:
+{descricao}
+
+Responda no formato:
+Recomendo a TINTA_NOME com acabamento TINTA_ACABAMENTO. Veja abaixo uma simulação da aplicação da cor TINTA_COR.
+""")
 
 
-vectorstore = FAISS.load_local(
-    "ia/faiss_tintas", 
-    OpenAIEmbeddings(openai_api_key=openai_key),
-    allow_dangerous_deserialization=True
-)
 
-llm = ChatOpenAI(openai_api_key=openai_key, temperature=0.5)
 
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-    chain_type="stuff"
-)
+def responder_com_imagem(descricao: str):
+    db = SessionLocal()
+    tintas = db.query(Tinta).all()
+    base_tintas = "\n".join([f"{t.nome}, {t.cor}, {t.acabamento}" for t in tintas])
 
-def responder(pergunta: str):
-    try:
-        resposta = qa_chain.run(pergunta)
-        return resposta
-    except Exception as e:
-        return f"Erro ao gerar resposta: {str(e)}"
+    chain = LLMChain(llm=llm, prompt=prompt_template)
+    resposta = chain.run(tintas=base_tintas, descricao=descricao)
 
-if __name__ == "__main__":
-    while True:
-        pergunta = input("\nUsuário: ")
-        if pergunta.lower() in ["sair", "exit", "quit"]:
-            break
-        resposta = responder(pergunta)
-        print("\nIA:", resposta)
+    
+    tinta_selecionada = next((t for t in tintas if t.nome in resposta), None)
+
+    if not tinta_selecionada:
+        return {"resposta": "Desculpe, não encontrei uma tinta adequada."}
+
+    prompt_img = f"varanda pintada com a cor {tinta_selecionada.cor} em estilo moderno"
+    url_imagem = gerar_imagem_dalle(prompt_img)
+
+    return {
+        "resposta": resposta,
+        "imagem": url_imagem
+    }
