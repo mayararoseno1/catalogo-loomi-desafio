@@ -1,13 +1,12 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from app.ia.agente_ia import responder
+from app.ia.agente_ia import responder_com_imagem
 
-router = APIRouter(prefix="/assistente", tags=["assistente"])
+router = APIRouter()
 
 class Pergunta(BaseModel):
-    mensagem: str
+    descricao: str
 
-@router.post("/")
-def responder_pergunta(pergunta: Pergunta):
-    resposta = responder(pergunta.mensagem)
-    return {"resposta": resposta}
+@router.post("/assistente/")
+def assistente_resposta(pergunta: Pergunta):
+    return responder_com_imagem(pergunta.descricao)
