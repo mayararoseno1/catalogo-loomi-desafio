@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.ia.agente_ia import responder
 
-router = APIRouter(prefix="/assistente", tags=["Assistente IA"])
+router = APIRouter(prefix="/assistente", tags=["assistente"])
 
 class Pergunta(BaseModel):
     mensagem: str

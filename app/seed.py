@@ -1,44 +1,32 @@
+from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import Tinta
 
-db = SessionLocal()
+db: Session = SessionLocal()
 
-# Lista de tintas 
-tintas = [
+tintas_exemplo = [
     Tinta(
-        nome="Suvinil Toque de Seda",
-        cor="Branco Neve",
-        tipo_superficie="Alvenaria",
-        ambiente="Interior",
+        nome="Branco Neve",
+        cor="Branco",
+        tipo_superficie="Parede Interna",
+        ambiente="Sala",
+        acabamento="Fosco",
+        features="Antimofo, Lavável",
+        linha="Suvinil Família Protegida"
+    ),
+    Tinta(
+        nome="Azul Serenity",
+        cor="Azul",
+        tipo_superficie="Parede Externa",
+        ambiente="Quarto",
         acabamento="Aveludado",
-        features="Lavável, sem cheiro",
-        linha="Premium"
-    ),
-    Tinta(
-        nome="Suvinil Fosco Completo",
-        cor="Cinza Urbano",
-        tipo_superficie="Parede",
-        ambiente="Interior",
-        acabamento="Fosco",
-        features="Alta cobertura, sem cheiro",
-        linha="Standard"
-    ),
-    Tinta(
-        nome="Suvinil Clássica",
-        cor="Bege Areia",
-        tipo_superficie="Parede",
-        ambiente="Interior e Exterior",
-        acabamento="Fosco",
-        features="Boa cobertura, lavável",
-        linha="Econômica"
+        features="Lavável",
+        linha="Suvinil Criativa"
     )
 ]
 
-
-for tinta in tintas:
-    db.add(tinta)
-
+db.add_all(tintas_exemplo)
 db.commit()
 db.close()
 
-print("✔️ Base de tintas populada com sucesso.")
+print("🌈 Dados inseridos com sucesso!")
